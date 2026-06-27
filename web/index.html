@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Fitness Logger & Analytics Dashboard</title>
+    <!-- Google Fonts: Outfit for clean, modern geometry -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for premium UI icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN for interactive visual graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-secondary: #131a2e;
+            --glass-bg: rgba(20, 26, 46, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #8b5cf6; /* Vibrant violet */
+            --accent-secondary: #06b6d4; /* Vibrant cyan */
+            --accent-magenta: #ec4899; /* Vibrant pink */
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-primary) var(--bg-secondary);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(6, 182, 212, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Custom Scrollbar for premium feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-secondary);
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            background: rgba(11, 15, 25, 0.8);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            padding: 0.6rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #ffffff, #d1d5db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p {
+            font-size: 0.8rem;
+            color: var(--accent-secondary);
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .btn:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), rgba(139, 92, 246, 0.8));
+            border: none;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--accent-secondary), rgba(6, 182, 212, 0.8));
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .main-container {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Stats Cards Styling */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform var(--transition-speed) ease, border-color var(--transition-speed) ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-primary);
+        }
+
+        .stat-card:nth-child(2)::before { background: var(--accent-secondary); }
+        .stat-card:nth-child(3)::before { background: var(--accent-magenta); }
+        .stat-card:nth-child(4)::before { background: var(--success); }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-info h3 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-info .stat-value {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .stat-info .stat-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .stat-icon-wrapper {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.75rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+
+        .stat-card:hover .stat-icon-wrapper {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+
+        /* Workspace Grid Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        .dashboard-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 1rem;
+        }
+
+        .box-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .box-title i {
+            color: var(--accent-secondary);
+        }
+
+        /* Form Controls */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input, select, textarea {
+            background: rgba(11, 15, 25, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 8px rgba(139, 92, 246, 0.25);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Chart Section Panel */
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .chart-selector {
+            width: auto;
+            min-width: 200px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: rgba(11, 15, 25, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        /* Table & Data Operations styling */
+        .table-section {
+            grid-column: 1 / -1;
+        }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-wrapper input {
+            padding-left: 2.5rem;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(19, 26, 46, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: rgba(20, 26, 46, 0.9);
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--glass-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.75px;
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.4rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        .btn-icon-edit:hover {
+            color: var(--accent-secondary);
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .btn-icon-delete:hover {
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Editing row style */
+        .editing-row td {
+            background-color: rgba(139, 92, 246, 0.05);
+        }
+
+        .editing-row input {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.875rem;
+        }
+
+        /* Status & Feedback systems */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .toast {
+            background: rgba(19, 26, 46, 0.95);
+            border-left: 4px solid var(--accent-primary);
+            border-right: 1px solid var(--glass-border);
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            min-width: 300px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-success { border-left-color: var(--success); }
+        .toast-error { border-left-color: var(--danger); }
+        .toast-info { border-left-color: var(--accent-secondary); }
+
+        /* Empty State */
+        .empty-state {
+            padding: 4rem 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--accent-secondary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        .tabs-header {
+            display: flex;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .tab-btn.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">
+                <i data-lucide="dumbbell"></i>
+            </div>
+            <div class="logo-text">
+                <h1>FITNESS PROGRESS</h1>
+                <p>Automated Logger & Analyst</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn" onclick="fetchWorkouts()"><i data-lucide="refresh-cw"></i>Reload Data</button>
+            <button class="btn btn-primary" onclick="saveToBackendFile()"><i data-lucide="save"></i>Sync to File</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Stats cards row -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Total Session Volume</h3>
+                    <div class="stat-value" id="stat-total-volume">0.0 kg</div>
+                    <div class="stat-desc">Cumulative tonnage calculated</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i data-lucide="scale"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Workouts Logged</h3>
+                    <div class="stat-value" id="stat-total-workouts">0</div>
+                    <div class="stat-desc">Unique exercise sets entries</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i data-lucide="activity"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Total Sets Done</h3>
+                    <div class="stat-value" id="stat-total-sets">0</div>
+                    <div class="stat-desc">Accumulated sets performed</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i data-lucide="calendar"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3>Primary Exercise</h3>
+                    <div class="stat-value" id="stat-top-exercise">N/A</div>
+                    <div class="stat-desc">Highest cumulative volume</div>
+                </div>
+                <div class="stat-icon-wrapper">
+                    <i data-lucide="award"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main workspace dashboard layout -->
+        <div class="content-grid">
+            <!-- Left Panel: Input & Imports -->
+            <div class="dashboard-box">
+                <div class="tabs-header">
+                    <button class="tab-btn active" onclick="switchTab('add-tab', this)">Add Log</button>
+                    <button class="tab-btn" onclick="switchTab('bulk-tab', this)">Bulk Import/Export</button>
+                </div>
+
+                <!-- Tab 1: Single Log Form -->
+                <div id="add-tab" class="tab-content active">
+                    <form id="workout-form" onsubmit="addWorkoutManual(event)">
+                        <div class="form-group">
+                            <label for="workout-date">Date</label>
+                            <input type="date" id="workout-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workout-exercise">Exercise Name</label>
+                            <input type="text" id="workout-exercise" placeholder="e.g., Back Squat" required list="exercise-suggestions">
+                            <datalist id="exercise-suggestions">
+                                <!-- Will be auto populated -->
+                            </datalist>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="workout-sets">Sets</label>
+                                <input type="number" id="workout-sets" min="1" placeholder="4" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="workout-reps">Reps</label>
+                                <input type="number" id="workout-reps" min="1" placeholder="8" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="workout-weight">Weight</label>
+                                <input type="number" id="workout-weight" min="0" step="0.1" placeholder="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="workout-unit">Unit</label>
+                                <select id="workout-unit">
+                                    <option value="kg">kg</option>
+                                    <option value="lbs">lbs</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+                            <i data-lucide="plus-circle"></i> Add Log Entry
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tab 2: Raw Import/Export Area -->
+                <div id="bulk-tab" class="tab-content">
+                    <div class="form-group">
+                        <label for="bulk-textarea">Paste Raw Text Logs (CSV/Txt format):</label>
+                        <textarea id="bulk-textarea" placeholder="YYYY-MM-DD, Exercise, Sets, Reps, Weight&#10;e.g., 2026-06-27, Bench Press, 4, 8, 85"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <button class="btn btn-primary" onclick="bulkImportWorkouts()" style="flex: 1; justify-content: center;">
+                            <i data-lucide="upload"></i> Import Logs
+                        </button>
+                        <button class="btn" onclick="generateBulkText()" style="flex: 1; justify-content: center;">
+                            <i data-lucide="download"></i> Export Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visual Dashboard Analytics -->
+            <div class="dashboard-box">
+                <div class="chart-controls">
+                    <div class="box-title">
+                        <i data-lucide="line-chart"></i>
+                        <span>Progressive Overload Analytics</span>
+                    </div>
+                    <select id="exercise-chart-selector" class="chart-selector" onchange="updateChart()">
+                        <!-- Exercise options will be generated dynamically -->
+                    </select>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="fitnessChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Table List -->
+            <div class="dashboard-box table-section">
+                <div class="box-header">
+                    <div class="box-title">
+                        <i data-lucide="list"></i>
+                        <span>Workout History Database</span>
+                    </div>
+                    <div class="table-controls">
+                        <div class="search-wrapper">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="table-search" placeholder="Search exercises, dates..." oninput="renderTable()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="workouts-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Exercise</th>
+                                <th>Sets</th>
+                                <th>Reps</th>
+                                <th>Weight</th>
+                                <th>Total Volume (kg)</th>
+                                <th style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="workouts-tbody">
+                            <!-- Populated by Javascript -->
+                        </tbody>
+                    </table>
+                    <div id="table-empty-state" class="empty-state" style="display: none;">
+                        <i data-lucide="folder-open"></i>
+                        <p>No workouts logged yet. Add your first entry above or import data!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <footer>
+        <p>Automated Fitness Progress Logger © 2026. Made with ❤️ for athletic progression.</p>
+    </footer>
+
+    <script>
+        // Global variables
+        let workoutsList = [];
+        let fitnessChartInstance = null;
+        let editingIndex = -1;
+
+        // Initialize App on DOM Content Loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current date on input date form
+            document.getElementById('workout-date').value = new Date().toISOString().split('T')[0];
+            
+            // Initialize Lucide Icons
+            lucide.createIcons();
+            
+            // Fetch records from python backend API
+            fetchWorkouts();
+        });
+
+        // Tab Switching Mechanism
+        function switchTab(tabId, btnElement = null) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            
+            if (btnElement) {
+                btnElement.classList.add('active');
+            } else {
+                // Find tab button matching tabId programmatically
+                const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => {
+                    const attr = btn.getAttribute('onclick') || '';
+                    return attr.includes(tabId);
+                });
+                if (targetBtn) targetBtn.classList.add('active');
+            }
+        }
+
+        // Show Toast Notification Messages
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            
+            let iconName = 'info';
+            if (type === 'success') iconName = 'check-circle';
+            if (type === 'error') iconName = 'alert-triangle';
+            
+            toast.innerHTML = `
+                <i data-lucide="${iconName}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons({attrs: {class: 'toast-icon'}});
+            
+            // Trigger animation frame
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+            
+            // Auto dismiss after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.remove();
+                }, 400);
+            }, 4000);
+        }
+
+        // Fetch Workouts from Python Server API
+        async function fetchWorkouts() {
+            try {
+                showToast("Loading workout logs...", "info");
+                const response = await fetch('/api/workouts');
+                if (!response.ok) throw new Error("Failed to fetch workouts database");
+                
+                workoutsList = await response.json();
+                
+                showToast(`Loaded ${workoutsList.length} workout logs`, "success");
+                
+                processDataUpdate();
+            } catch (err) {
+                console.error(err);
+                showToast("Connection to backend API failed. Using in-memory mode.", "error");
+                // Mock seed data in case web page opened directly without server
+                if (workoutsList.length === 0) {
+                    workoutsList = [
+                        {date: "2026-06-15", exercise: "Back Squat", sets: 4, reps: 8, weight: 100, volume: 3200},
+                        {date: "2026-06-15", exercise: "Bench Press", sets: 4, reps: 10, weight: 80, volume: 3200},
+                        {date: "2026-06-15", exercise: "Barbell Row", sets: 3, reps: 10, weight: 70, volume: 2100},
+                        {date: "2026-06-20", exercise: "Back Squat", sets: 4, reps: 8, weight: 102.5, volume: 3280},
+                        {date: "2026-06-20", exercise: "Bench Press", sets: 4, reps: 10, weight: 82.5, volume: 3300},
+                        {date: "2026-06-20", exercise: "Barbell Row", sets: 3, reps: 10, weight: 72.5, volume: 2175},
+                        {date: "2026-06-25", exercise: "Back Squat", sets: 4, reps: 8, weight: 105, volume: 3360},
+                        {date: "2026-06-25", exercise: "Bench Press", sets: 4, reps: 8, weight: 85, volume: 2720},
+                        {date: "2026-06-25", exercise: "Barbell Row", sets: 3, reps: 10, weight: 75, volume: 2250}
+                    ];
+                    processDataUpdate();
+                }
+            }
+        }
+
+        // Post-update pipeline
+        function processDataUpdate() {
+            updateStats();
+            populateSuggestions();
+            populateChartSelector();
+            renderTable();
+            updateChart();
+            generateBulkText();
+        }
+
+        // Update Dashboard Summary Stats Cards
+        function updateStats() {
+            if (workoutsList.length === 0) {
+                document.getElementById('stat-total-volume').innerText = "0.0 kg";
+                document.getElementById('stat-total-workouts').innerText = "0";
+                document.getElementById('stat-total-sets').innerText = "0";
+                document.getElementById('stat-top-exercise').innerText = "N/A";
+                return;
+            }
+
+            // Calculate metrics
+            let totalVolume = 0;
+            let totalSets = 0;
+            const exerciseVolumeMap = {};
+
+            workoutsList.forEach(w => {
+                totalVolume += w.volume;
+                totalSets += w.sets;
+                exerciseVolumeMap[w.exercise] = (exerciseVolumeMap[w.exercise] || 0) + w.volume;
+            });
+
+            // Find top exercise
+            let topExercise = "N/A";
+            let maxVol = 0;
+            for (const [ex, vol] of Object.entries(exerciseVolumeMap)) {
+                if (vol > maxVol) {
+                    maxVol = vol;
+                    topExercise = ex;
+                }
+            }
+
+            document.getElementById('stat-total-volume').innerText = `${totalVolume.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} kg`;
+            document.getElementById('stat-total-workouts').innerText = workoutsList.length;
+            document.getElementById('stat-total-sets').innerText = totalSets;
+            document.getElementById('stat-top-exercise').innerText = topExercise;
+        }
+
+        // Populate Form Autocomplete Suggestions
+        function populateSuggestions() {
+            const list = document.getElementById('exercise-suggestions');
+            list.innerHTML = '';
+            
+            const exercises = [...new Set(workoutsList.map(w => w.exercise))];
+            exercises.sort().forEach(ex => {
+                const opt = document.createElement('option');
+                opt.value = ex;
+                list.appendChild(opt);
+            });
+        }
+
+        // Populate select list for chart analytics
+        function populateChartSelector() {
+            const selector = document.getElementById('exercise-chart-selector');
+            const currentValue = selector.value;
+            selector.innerHTML = '';
+
+            const exercises = [...new Set(workoutsList.map(w => w.exercise))];
+            exercises.sort();
+
+            if (exercises.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = "";
+                opt.innerText = "No data available";
+                selector.appendChild(opt);
+                return;
+            }
+
+            exercises.forEach(ex => {
+                const opt = document.createElement('option');
+                opt.value = ex;
+                opt.innerText = ex;
+                selector.appendChild(opt);
+            });
+
+            // Re-apply select value if it still exists
+            if (exercises.includes(currentValue)) {
+                selector.value = currentValue;
+            } else {
+                selector.value = exercises[0];
+            }
+        }
+
+        // Add a workout log manually
+        function addWorkoutManual(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('workout-date').value;
+            const exercise = document.getElementById('workout-exercise').value.trim();
+            const sets = parseInt(document.getElementById('workout-sets').value);
+            const reps = parseInt(document.getElementById('workout-reps').value);
+            const weight = parseFloat(document.getElementById('workout-weight').value);
+            const unit = document.getElementById('workout-unit').value;
+
+            if (!date || !exercise || isNaN(sets) || isNaN(reps) || isNaN(weight)) {
+                showToast("All fields are required and must be valid", "error");
+                return;
+            }
+
+            // Standardize weight based on unit
+            let volume = sets * reps * weight;
+            let metricWeight = weight;
+            if (unit === 'lbs') {
+                metricWeight = weight * 0.45359237;
+                volume = sets * reps * metricWeight;
+            }
+            
+            // Format volume decimal
+            volume = parseFloat(volume.toFixed(2));
+            metricWeight = parseFloat(metricWeight.toFixed(2));
+
+            const newWorkout = {
+                date,
+                exercise,
+                sets,
+                reps,
+                weight: metricWeight,
+                volume
+            };
+
+            // Add to array, sorted by date
+            workoutsList.push(newWorkout);
+            workoutsList.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            showToast(`Added ${exercise} workout!`, "success");
+            
+            // Reset form partly
+            document.getElementById('workout-exercise').value = '';
+            document.getElementById('workout-sets').value = '';
+            document.getElementById('workout-reps').value = '';
+            document.getElementById('workout-weight').value = '';
+            
+            processDataUpdate();
+        }
+
+        // Render workout history grid
+        function renderTable() {
+            const tbody = document.getElementById('workouts-tbody');
+            const emptyState = document.getElementById('table-empty-state');
+            const searchVal = document.getElementById('table-search').value.toLowerCase().trim();
+            
+            tbody.innerHTML = '';
+            
+            const filtered = workoutsList.filter(w => {
+                return w.exercise.toLowerCase().includes(searchVal) || w.date.includes(searchVal);
+            });
+
+            if (filtered.length === 0) {
+                emptyState.style.display = 'flex';
+                return;
+            }
+            emptyState.style.display = 'none';
+
+            // Show logs in reverse date order (newest first)
+            const displayList = [...filtered].reverse();
+
+            displayList.forEach((workout, idx) => {
+                // Find actual index in primary array workoutsList
+                const realIndex = workoutsList.findIndex(w => w === workout);
+                
+                const tr = document.createElement('tr');
+                
+                if (editingIndex === realIndex) {
+                    tr.className = "editing-row";
+                    tr.innerHTML = `
+                        <td><input type="date" id="edit-date-${realIndex}" value="${workout.date}" style="width:130px;"></td>
+                        <td><input type="text" id="edit-exercise-${realIndex}" value="${escapeHtml(workout.exercise)}"></td>
+                        <td><input type="number" id="edit-sets-${realIndex}" min="1" value="${workout.sets}" style="width:60px;"></td>
+                        <td><input type="number" id="edit-reps-${realIndex}" min="1" value="${workout.reps}" style="width:60px;"></td>
+                        <td><input type="number" id="edit-weight-${realIndex}" min="0" step="0.1" value="${workout.weight}" style="width:85px;"></td>
+                        <td>${workout.volume.toFixed(1)}</td>
+                        <td class="row-actions">
+                            <button class="btn-icon btn-icon-edit" onclick="saveRow(${realIndex})" title="Save Changes"><i data-lucide="check"></i></button>
+                            <button class="btn-icon btn-icon-delete" onclick="cancelEdit()" title="Cancel"><i data-lucide="x"></i></button>
+                        </td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td style="font-weight: 500;">${workout.date}</td>
+                        <td style="color: var(--accent-secondary); font-weight: 600;">${escapeHtml(workout.exercise)}</td>
+                        <td><span style="background: rgba(255,255,255,0.05); padding: 0.25rem 0.5rem; border-radius: 4px;">${workout.sets}</span></td>
+                        <td><span style="background: rgba(255,255,255,0.05); padding: 0.25rem 0.5rem; border-radius: 4px;">${workout.reps}</span></td>
+                        <td><strong>${workout.weight}</strong> kg</td>
+                        <td style="color: var(--accent-primary); font-weight: 700;">${workout.volume.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})}</td>
+                        <td class="row-actions">
+                            <button class="btn-icon btn-icon-edit" onclick="startEdit(${realIndex})" title="Edit"><i data-lucide="edit-2"></i></button>
+                            <button class="btn-icon btn-icon-delete" onclick="deleteWorkout(${realIndex})" title="Delete"><i data-lucide="trash-2"></i></button>
+                        </td>
+                    `;
+                }
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // Start Row Inline Editing
+        function startEdit(idx) {
+            editingIndex = idx;
+            renderTable();
+        }
+
+        // Cancel inline editing mode
+        function cancelEdit() {
+            editingIndex = -1;
+            renderTable();
+        }
+
+        // Save Inline Edits
+        function saveRow(idx) {
+            const date = document.getElementById(`edit-date-${idx}`).value;
+            const exercise = document.getElementById(`edit-exercise-${idx}`).value.trim();
+            const sets = parseInt(document.getElementById(`edit-sets-${idx}`).value);
+            const reps = parseInt(document.getElementById(`edit-reps-${idx}`).value);
+            const weight = parseFloat(document.getElementById(`edit-weight-${idx}`).value);
+
+            if (!date || !exercise || isNaN(sets) || isNaN(reps) || isNaN(weight)) {
+                showToast("Invalid inputs in edited row", "error");
+                return;
+            }
+
+            workoutsList[idx].date = date;
+            workoutsList[idx].exercise = exercise;
+            workoutsList[idx].sets = sets;
+            workoutsList[idx].reps = reps;
+            workoutsList[idx].weight = weight;
+            workoutsList[idx].volume = parseFloat((sets * reps * weight).toFixed(2));
+
+            // Re-sort array in chronological order
+            workoutsList.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            editingIndex = -1;
+            showToast("Log entry updated", "success");
+            processDataUpdate();
+        }
+
+        // Delete Log Entry
+        function deleteWorkout(idx) {
+            const workout = workoutsList[idx];
+            if (confirm(`Are you sure you want to delete this log for ${workout.exercise} on ${workout.date}?`)) {
+                workoutsList.splice(idx, 1);
+                showToast("Log entry deleted", "info");
+                processDataUpdate();
+            }
+        }
+
+        // Generate text area string for Exporting
+        function generateBulkText() {
+            const area = document.getElementById('bulk-textarea');
+            let lines = [];
+            workoutsList.forEach(w => {
+                lines.push(`${w.date}, ${w.exercise}, ${w.sets}, ${w.reps}, ${w.weight}`);
+            });
+            const textContent = lines.join('\n');
+            area.value = textContent;
+            
+            // Switch to bulk tab first so the user sees the generated text
+            switchTab('bulk-tab');
+            
+            // Attempt to write to system clipboard
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textContent).then(() => {
+                    showToast("Workout logs copied to clipboard!", "success");
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                    showToast("Exported to textarea. Copy manually below.", "info");
+                });
+            } else {
+                // Fallback for non-secure contexts
+                try {
+                    area.select();
+                    document.execCommand('copy');
+                    showToast("Workout logs copied to clipboard!", "success");
+                } catch (err) {
+                    showToast("Exported to textarea. Copy manually below.", "info");
+                }
+            }
+        }
+
+        // Bulk Parse logs from pasted text
+        function bulkImportWorkouts() {
+            const area = document.getElementById('bulk-textarea').value;
+            const lines = area.split('\n');
+            let importedCount = 0;
+            let skippedCount = 0;
+            const parsedArray = [];
+
+            lines.forEach((line, index) => {
+                const cleaned = line.trim();
+                if (!cleaned || cleaned.startsWith('#') || cleaned.toLowerCase().includes('exercise, sets')) {
+                    return; // Skip comments/headers
+                }
+
+                const parts = cleaned.split(',').map(p => p.trim());
+                if (parts.length !== 5) {
+                    skippedCount++;
+                    return;
+                }
+
+                const [date, exercise, setsStr, repsStr, weightStr] = parts;
+                
+                // Perform quick validation
+                if (date.length !== 10 || date[4] !== '-' || date[7] !== '-') {
+                    skippedCount++;
+                    return;
+                }
+
+                const sets = parseInt(setsStr);
+                const reps = parseInt(repsStr);
+                const weight = parseFloat(weightStr);
+
+                if (isNaN(sets) || isNaN(reps) || isNaN(weight) || sets <= 0 || reps <= 0 || weight < 0) {
+                    skippedCount++;
+                    return;
+                }
+
+                const volume = parseFloat((sets * reps * weight).toFixed(2));
+                parsedArray.push({
+                    date,
+                    exercise,
+                    sets,
+                    reps,
+                    weight,
+                    volume
+                });
+                importedCount++;
+            });
+
+            if (parsedArray.length > 0) {
+                workoutsList = [...workoutsList, ...parsedArray];
+                // Sort chronologically
+                workoutsList.sort((a, b) => new Date(a.date) - new Date(b.date));
+                showToast(`Imported ${importedCount} logs successfully. Skipped ${skippedCount} lines.`, "success");
+                processDataUpdate();
+            } else {
+                showToast(`Failed to import logs. Skipped all ${skippedCount} checked lines.`, "error");
+            }
+        }
+
+        // Sync Data back to local text file via backend API
+        async function saveToBackendFile() {
+            try {
+                showToast("Syncing logs to workout_log.txt file...", "info");
+                
+                // Format workouts into lines like original text file
+                const contentLines = workoutsList.map(w => {
+                    return `${w.date}, ${w.exercise}, ${w.sets}, ${w.reps}, ${w.weight}`;
+                });
+                
+                const response = await fetch('/api/workouts/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ lines: contentLines })
+                });
+
+                if (!response.ok) {
+                    throw new Error("HTTP request failed with status: " + response.status);
+                }
+
+                const resData = await response.json();
+                if (resData.success) {
+                    showToast("Successfully synchronized with workout_log.txt!", "success");
+                } else {
+                    throw new Error(resData.error || "Save operation failed");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to sync back to local disk: " + err.message, "error");
+            }
+        }
+
+        // Draw and update progress chart using Chart.js
+        function updateChart() {
+            const canvas = document.getElementById('fitnessChart');
+            const selectedExercise = document.getElementById('exercise-chart-selector').value;
+
+            if (!selectedExercise) {
+                // Clear chart
+                if (fitnessChartInstance) {
+                    fitnessChartInstance.destroy();
+                    fitnessChartInstance = null;
+                }
+                return;
+            }
+
+            // Filter workouts for selected exercise, sorted chronologically (already sorted globally)
+            const exerciseData = workoutsList.filter(w => w.exercise === selectedExercise);
+
+            const labels = exerciseData.map(w => w.date);
+            const volumes = exerciseData.map(w => w.volume);
+            const weights = exerciseData.map(w => w.weight);
+
+            if (fitnessChartInstance) {
+                fitnessChartInstance.destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            
+            // Create gradient fills
+            const volumeGradient = ctx.createLinearGradient(0, 0, 0, 300);
+            volumeGradient.addColorStop(0, 'rgba(139, 92, 246, 0.4)');
+            volumeGradient.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+
+            const weightGradient = ctx.createLinearGradient(0, 0, 0, 300);
+            weightGradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
+            weightGradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+            fitnessChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Session Volume (kg)',
+                            data: volumes,
+                            borderColor: '#8b5cf6',
+                            backgroundColor: volumeGradient,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#8b5cf6',
+                            pointBorderColor: 'rgba(255,255,255,0.8)',
+                            pointHoverRadius: 7,
+                            pointRadius: 4,
+                            fill: true,
+                            tension: 0.3,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Working Weight (kg)',
+                            data: weights,
+                            borderColor: '#06b6d4',
+                            backgroundColor: weightGradient,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#06b6d4',
+                            pointBorderColor: 'rgba(255,255,255,0.8)',
+                            pointHoverRadius: 6,
+                            pointRadius: 4,
+                            fill: true,
+                            tension: 0.3,
+                            borderDash: [5, 5],
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#e5e7eb',
+                                font: {
+                                    family: 'Outfit',
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(19, 26, 46, 0.9)',
+                            titleFont: { family: 'Outfit', weight: 'bold' },
+                            bodyFont: { family: 'Outfit' },
+                            borderColor: 'rgba(255, 255, 255, 0.08)',
+                            borderWidth: 1,
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.04)'
+                            },
+                            ticks: {
+                                color: '#9ca3af',
+                                font: { family: 'Outfit', size: 10 }
+                            }
+                        },
+                        y: {
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Volume (kg)',
+                                color: '#8b5cf6',
+                                font: { family: 'Outfit', size: 11, weight: 'bold' }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.04)'
+                            },
+                            ticks: {
+                                color: '#9ca3af',
+                                font: { family: 'Outfit' }
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Weight (kg)',
+                                color: '#06b6d4',
+                                font: { family: 'Outfit', size: 11, weight: 'bold' }
+                            },
+                            grid: {
+                                drawOnChartArea: false // only show grid lines for left axis
+                            },
+                            ticks: {
+                                color: '#9ca3af',
+                                font: { family: 'Outfit' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Simple helper to escape HTML strings
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        }
+    </script>
+</body>
+</html>
