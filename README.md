@@ -1,7 +1,6 @@
 # AUTOMATED FITNESS PROGRESS LOGGER & ANALYTICS
 
-#### Video Demo: <(https://youtu.be/hgIwCZUNA0M)>
-
+#### Video Demo: <https://youtu.be/hgIwCZUNA0M>
 ---
 
 ## 🏋️ Project Overview & Purpose
